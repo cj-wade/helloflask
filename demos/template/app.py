@@ -50,7 +50,7 @@ def inject_info():
 
 
 # register template global function
-@app.template_global()
+@app.template_global(name="ss")
 def bar():
     return 'I am bar.'
 
@@ -77,13 +77,18 @@ def watchlist_with_static():
 # message flashing
 @app.route('/flash')
 def just_flash():
-    flash('I am flash, who is looking for me?')
+    flash('我帅吗?')
+    flash('我帅吗?')
+    flash('我帅吗?')
     return redirect(url_for('index'))
 
 
 # 404 error handler
 @app.errorhandler(404)
 def page_not_found(e):
+    print(e.code)
+    print(e.name)
+    print(e.description)
     return render_template('errors/404.html'), 404
 
 

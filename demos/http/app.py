@@ -6,6 +6,7 @@
     :license: MIT, see LICENSE for more details.
 """
 import os
+
 try:
     from urlparse import urlparse, urljoin
 except ImportError:
@@ -13,17 +14,28 @@ except ImportError:
 
 from jinja2 import escape
 from jinja2.utils import generate_lorem_ipsum
-from flask import Flask, make_response, request, redirect, url_for, abort, session, jsonify
+from flask import Flask, make_response, request, redirect, url_for, abort, session, jsonify, g, current_app
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'secret string')
+
+
+@app.before_request
+def get_name():
+    g.name = request.args.get('name')
+    print(current_app)
+
+
+@app.before_first_request
+def dosomething_before_request():
+    return '<p>CJ is patient.</p>'
 
 
 # get name value from query string and cookie
 @app.route('/')
 @app.route('/hello')
 def hello():
-    name = request.args.get('name')
+    name = g.name
     if name is None:
         name = request.cookies.get('name', 'Human')
     response = '<h1>Hello, %s!</h1>' % escape(name)  # escape name to avoid XSS
@@ -38,7 +50,8 @@ def hello():
 # redirect
 @app.route('/hi')
 def hi():
-    return redirect(url_for('hello'))
+    # return redirect(url_for('hello'))
+    return redirect("http://www.baidu.com")
 
 
 # use int URL converter
@@ -50,7 +63,7 @@ def go_back(year):
 # use any URL converter
 @app.route('/colors/<any(blue, white, red):color>')
 def three_colors(color):
-    return '<p>Love is patient and kind. Love is not jealous or boastful or proud or rude.</p>'
+    return '<p>Love is patient and kind and %s. Love is not jealous or boastful or proud or rude.</p>' % color
 
 
 # return error response
@@ -65,7 +78,7 @@ def teapot(drink):
 # 404
 @app.route('/404')
 def not_found():
-    abort(404)
+    abort(404)  # abort一旦被调用，其后的代码将不会被执行
 
 
 # return response with different formats
@@ -201,12 +214,15 @@ def bar():
 @app.route('/do-something')
 def do_something():
     # do something here
+    print("do something")
     return redirect_back()
 
 
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
+    print(ref_url.netloc + "666")
     test_url = urlparse(urljoin(request.host_url, target))
+    print(test_url)
     return test_url.scheme in ('http', 'https') and \
            ref_url.netloc == test_url.netloc
 

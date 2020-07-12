@@ -15,6 +15,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, TextAreaField
 from wtforms.validators import DataRequired
+from flask_migrate import Migrate
 
 # SQLite URI compatible
 WIN = sys.platform.startswith('win')
@@ -30,10 +31,10 @@ app.jinja_env.lstrip_blocks = True
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret string')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', prefix + os.path.join(app.root_path, 'data.db'))
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False    # 是否追踪对象的修改(否)
 
 db = SQLAlchemy(app)
-
+migrate = Migrate(app, db)
 
 # handlers
 @app.shell_context_processor
@@ -48,7 +49,9 @@ def make_shell_context():
 def initdb(drop):
     """Initialize the database."""
     if drop:
+        click.confirm('This operation will delete the database', abort=True)
         db.drop_all()
+        click.echo('Drops table')
     db.create_all()
     click.echo('Initialized database.')
 
@@ -72,7 +75,7 @@ class DeleteNoteForm(FlaskForm):
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text)
-
+    timestamp = db.Column(db.DateTime)
     # optional
     def __repr__(self):
         return '<Note %r>' % self.body
@@ -259,7 +262,7 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50))
     body = db.Column(db.Text)
-    comments = db.relationship('Comment', back_populates='post', cascade='all, delete-orphan')  # collection
+    comments = db.relationship('Comment', back_populates='post', cascade='all')  # collection
 
 
 class Comment(db.Model):

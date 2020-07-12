@@ -1,1 +1,2 @@
 FLASK_ENV=development
+SENDGRID_API_KEY=your_key_here
